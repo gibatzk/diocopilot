@@ -1,0 +1,54 @@
+import requests
+from bs4 import BeautifulSoup
+
+def extract_text_from_url(url):
+    response = requests.get(url)
+
+    if response.status_code == 200:
+      soup = BeautifulSoup(response.text, 'html.parser')
+      for script_or_style in soup(["script", "style"]):
+        script_or_style.decompose()
+      text = soup.get_text(separator=' ')
+      #limpar texto
+      lines = (line.strip() for line in text.splitlines())
+      parts = (phrase.strip() for line in lines for phrase in line.split("  "))
+      text_limpo = '\n'.join(part for part in parts if part)
+
+    else:
+      print(f"Failed to fetch URL.Status code :{response.status_code}")
+      return None
+
+
+    text = soup.get_text()
+    return text
+
+# Exemplo de uso
+url = 'https://dev.to/kenakamu/azure-open-ai-in-vnet-3alo'
+extracted_text = extract_text_from_url(url)
+print(extracted_text)
+
+from langchain_openai.chat_models.azure import AzureChatOpenAI
+
+client = AzureChatOpenAI(
+    azure_endpoint='',
+    api_key = '',
+    api_version='2024-02-15-preview',
+    deployment_name='gpt-4o',
+    max_retries=0
+
+)
+
+def translate_article(text, lang):
+  messages = [
+      ("system","Voce atua como tradutor de texto"),
+      ("user",f"traduza o {text}para o idioma {lang}e responda em markdonw")
+  ]
+
+  response = client.invoke(messages)
+  print(response.content)
+
+translate_article('GPT models are hosted in multiple service vendor at the moment, and Microsoft Azure is one of them.', 'portugues')
+url = 'https://dev.to/kenakamu/azure-open-ai-in-vnet-3alo'
+text = extract_text_from_url(url)
+article = translate_article(text, 'portugues')
+print(article)
